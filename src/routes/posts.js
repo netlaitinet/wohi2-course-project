@@ -1,111 +1,201 @@
 const express = require("express");
 const router = express.Router();
+const prisma = require("../lib/prisma");
+// const posts = require("../data/posts");
+function formatPost(post) {
+    return {
+	...post,
+	date: post.date.toISOString().split("T")[0],
+	keywords: post.keywords.map((k) => k.name),
+    };
+}
 
-const posts = require("../data/posts");
 
 // GET /posts
 // List all posts
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
     const { keyword } = req.query;
 
-    if (!keyword) {
-	return res.json(posts);
-    }
+    const where = keyword
+	? { keywords: { some: { name: keyword } } }
 
-    const filteredPosts = posts.filter(post =>
-	post.keywords.includes(keyword.toLowerCase())
-    );
+	: {};
 
-    res.json(filteredPosts);
+    const posts = await prisma.post.findMany({
+	where,
+	include: { keywords: true },
+
+	orderBy: { id: "asc" },
+
+    });
+
+    res.json(posts.map(formatPost));
+
 });
+
+ 
+// router.get("/", (req, res) => {
+//     const { keyword } = req.query;
+
+//     if (!keyword) {
+// 	return res.json(posts);
+//     }
+
+//     const filteredPosts = posts.filter(post =>
+// 	post.keywords.includes(keyword.toLowerCase())
+//     );
+
+//     res.json(filteredPosts);
+// });
 
 
 // GET /posts/:postld
 // Show a specific post
-router.get("/:postId", (req, res) => {
+router.get("/:postId", async (req, res) => {
     const postId = Number(req.params.postId);
-
-    const post = posts.find((p) => p.id === postId);
+    const post = await prisma.posts.findUnique({
+	where:{ id: postId},
+	include: { keywords: true},
+    });
     if (!post) {
-
-	return res.status(404).json({ message: "Question not found" });
-
+	return res.status(404).json({ message: "Post not found" });
     }
 
-    res.json(post);
+    res.json(formatPost(post));
 
 });
 
 // POST /posts
 // Create a new post
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const { title, date, content, keywords } = req.body;
 
     if (!title || !date || !content) {
 	return res.status(400).json({
-	    message: "title, date, and content are required"
+	    message: "title, date, and content are mandatory"
 	});
     }
 
-    const maxId = Math.max(...posts.map(p => p.id), 0);
+    const keywordsArray = Array.isArray(keywords) ? keywords : [];    
 
-    const newPost = {
-	id: posts.length ? maxId + 1 : 1,
-	title, date, content,
-	keywords: Array.isArray(keywords) ? keywords : []
-    };
-    posts.push(newPost);
-    res.status(201).json(newPost);
+
+    const newPost = await prisma.post.create({
+	data: {
+	    title, date: new Date(date), content,
+	    keywords: {
+		connectOrCreate: keywordsArray.map((kw) => ({
+		    where: { name: kw}, create: { name: kw},
+		})), },
+	},
+	include: { keywords: true },
+    });
+    res.status(201).json(formatPost(newPost));
 
 });
+
 // PUT /posts/:postld
-// Edit a post
-router.put("/:postId", (req, res) => {
+router.put("/:postId", async (req, res) => {
     const postId = Number(req.params.postId);
     const { title, date, content, keywords } = req.body;
-
-    const post = posts.find((p) => p.id === postId);
-    if (!post) {
-
+    const existingPost = await prisma.post.findUnique({ where: { id: postId } });
+    if (!existingPost) {
 	return res.status(404).json({ message: "Post not found" });
+
     }
     if (!title || !date || !content) {
-
-	return res.json({
-
-	    message: "title, date, and content are required"
-
-	});
-
+	return res.status(400).json({ msg: "title, date and content are mandatory" });
     }
+    const keywordsArray = Array.isArray(keywords) ? keywords : [];
 
-    post.title = title;
-    post.date = date;
-    post.content = content;
-    post.keywords = Array.isArray(keywords) ? keywords : [];
-    res.json(post);
+    const updatedPost = await prisma.post.update({
+	where: { id: postId },
+
+	data: {
+	    title, date: new Date(date), content,
+	    keywords: {
+		set: [],
+
+		connectOrCreate: keywordsArray.map((kw) => ({
+		    where: { name: kw },
+		    create: { name: kw },
+		})),
+	    },
+	},
+	include: { keywords: true },
+    });
+    res.json(formatPost(updatedPost));
 });
+
+// router.put("/:postId", (req, res) => {
+//     const postId = Number(req.params.postId);
+//     const { title, date, content, keywords } = req.body;
+
+//     const post = posts.find((p) => p.id === postId);
+//     if (!post) {
+
+// 	return res.status(404).json({ message: "Post not found" });
+//     }
+//     if (!title || !date || !content) {
+
+// 	return res.json({
+
+// 	    message: "title, date, and content are required"
+
+// 	});
+
+//     }
+
+//     post.title = title;
+//     post.date = date;
+//     post.content = content;
+//     post.keywords = Array.isArray(keywords) ? keywords : [];
+//     res.json(post);
+// });
 
 // DELETE /posts/:postId
 // Delete a post
+router.delete("/:postId", async (req, res) => {
+const postId =
 
-router.delete("/:postId", (req, res) => {
-    const postId = Number(req.params.postId);
+Number(req.params.postId);
 
-    const postIndex = posts.findIndex((p) => p.id === postId);
+const post = await prisma.post.findUnique({
+where: { id: postId },
+include: { keywords: true },
 
-    if (postIndex === -1) {
-	return res.status(404).json({ message: "Post not found" });
+});
 
-    }
-    const deletedPost = posts.splice(postIndex, 1);
+if (!post) {
+return res.status(404).json({ message: "Post not found" });
+}
 
-    res.json({
-	message: "Post deleted successfully",
-	post: deletedPost[0]
+await prisma.post.delete({ where: { id: postId } });
 
+res.json({
+
+message: "Post deleted successfully",
+post: formatPost(post),
     });
 });
+
+
+// router.delete("/:postId", (req, res) => {
+//     const postId = Number(req.params.postId);
+
+//     const postIndex = posts.findIndex((p) => p.id === postId);
+
+//     if (postIndex === -1) {
+// 	return res.status(404).json({ message: "Post not found" });
+
+//     }
+//     const deletedPost = posts.splice(postIndex, 1);
+
+//     res.json({
+// 	message: "Post deleted successfully",
+// 	post: deletedPost[0]
+
+//     });
+// });
 
 
 module.exports = router;

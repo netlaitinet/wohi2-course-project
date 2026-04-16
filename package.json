@@ -1,15 +1,39 @@
 {
-  "name": "backend-course-project",
-  "version": "1.0.0",
-  "description": "WOHI 2 project",
-  "main": "src/index.js",
-  "scripts": {
-    "start" : "node src/index.js",
-    "dev": "node --watch src/index.js"
-  },
-  "keywords": ["express", "nodejs", "backend", "api"],
-  "license": "MIT",
-  "dependencies": {
-    "express": "^4.18.2"
-  }
+    "name": "backend-course-project",
+    "version": "1.0.0",
+    "description": "WOHI 2 project",
+    "main": "src/index.js",
+    "scripts": {
+
+	"lint": "eslint .",
+	"lint:fix": "eslint . --fix",
+	"typecheck": "tsc --noEmit",
+        "start": "node src/index.js",
+        "dev": "node --watch src/index.js",
+        "db:migrate": "npx prisma migrate dev",
+        "db:seed": "npx prisma db seed",
+        "db:studio": "npx prisma studio",
+        "db:reset": "npx prisma migrate reset"
+    },
+    "prisma": {
+        "seed": "node prisma/seed.js"
+    },
+    "keywords": [
+        "express",
+        "nodejs",
+        "backend",
+        "api"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "@prisma/client": "^6.x.x",
+        "express": "^4.22.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.2.0",
+        "prisma": "^6.x.x",
+        "typescript": "^6.0.2",
+        "typescript-eslint": "^8.58.2"
+    }
 }
