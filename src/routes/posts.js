@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
+const authenticate = require("../middleware/auth");
+const isOwner = require("../middleware/isOwner");
 // const posts = require("../data/posts");
 function formatPost(post) {
     return {
@@ -32,28 +34,13 @@ router.get("/", async (req, res) => {
     res.json(posts.map(formatPost));
 
 });
-
  
-// router.get("/", (req, res) => {
-//     const { keyword } = req.query;
-
-//     if (!keyword) {
-// 	return res.json(posts);
-//     }
-
-//     const filteredPosts = posts.filter(post =>
-// 	post.keywords.includes(keyword.toLowerCase())
-//     );
-
-//     res.json(filteredPosts);
-// });
-
 
 // GET /posts/:postld
 // Show a specific post
 router.get("/:postId", async (req, res) => {
     const postId = Number(req.params.postId);
-    const post = await prisma.posts.findUnique({
+    const post = await prisma.post.findUnique({ // note to self, linter corrected posts -> post
 	where:{ id: postId},
 	include: { keywords: true},
     });
@@ -82,6 +69,7 @@ router.post("/", async (req, res) => {
     const newPost = await prisma.post.create({
 	data: {
 	    title, date: new Date(date), content,
+	    userId: req.user.userId,
 	    keywords: {
 		connectOrCreate: keywordsArray.map((kw) => ({
 		    where: { name: kw}, create: { name: kw},
@@ -93,8 +81,10 @@ router.post("/", async (req, res) => {
 
 });
 
+router.use(authenticate);
+
 // PUT /posts/:postld
-router.put("/:postId", async (req, res) => {
+router.put("/:postId", isOwner, async (req, res) => {
     const postId = Number(req.params.postId);
     const { title, date, content, keywords } = req.body;
     const existingPost = await prisma.post.findUnique({ where: { id: postId } });
@@ -126,35 +116,10 @@ router.put("/:postId", async (req, res) => {
     res.json(formatPost(updatedPost));
 });
 
-// router.put("/:postId", (req, res) => {
-//     const postId = Number(req.params.postId);
-//     const { title, date, content, keywords } = req.body;
-
-//     const post = posts.find((p) => p.id === postId);
-//     if (!post) {
-
-// 	return res.status(404).json({ message: "Post not found" });
-//     }
-//     if (!title || !date || !content) {
-
-// 	return res.json({
-
-// 	    message: "title, date, and content are required"
-
-// 	});
-
-//     }
-
-//     post.title = title;
-//     post.date = date;
-//     post.content = content;
-//     post.keywords = Array.isArray(keywords) ? keywords : [];
-//     res.json(post);
-// });
 
 // DELETE /posts/:postId
 // Delete a post
-router.delete("/:postId", async (req, res) => {
+router.delete("/:postId", isOwner, async (req, res) => {
 const postId =
 
 Number(req.params.postId);
@@ -177,25 +142,6 @@ message: "Post deleted successfully",
 post: formatPost(post),
     });
 });
-
-
-// router.delete("/:postId", (req, res) => {
-//     const postId = Number(req.params.postId);
-
-//     const postIndex = posts.findIndex((p) => p.id === postId);
-
-//     if (postIndex === -1) {
-// 	return res.status(404).json({ message: "Post not found" });
-
-//     }
-//     const deletedPost = posts.splice(postIndex, 1);
-
-//     res.json({
-// 	message: "Post deleted successfully",
-// 	post: deletedPost[0]
-
-//     });
-// });
 
 
 module.exports = router;

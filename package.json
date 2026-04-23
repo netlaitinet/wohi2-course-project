@@ -4,10 +4,9 @@
     "description": "WOHI 2 project",
     "main": "src/index.js",
     "scripts": {
-
-	"lint": "eslint .",
-	"lint:fix": "eslint . --fix",
-	"typecheck": "tsc --noEmit",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "typecheck": "tsc --noEmit",
         "start": "node src/index.js",
         "dev": "node --watch src/index.js",
         "db:migrate": "npx prisma migrate dev",
@@ -27,7 +26,9 @@
     "license": "MIT",
     "dependencies": {
         "@prisma/client": "^6.x.x",
-        "express": "^4.22.1"
+        "bcrypt": "^6.0.0",
+        "express": "^4.22.1",
+        "jsonwebtoken": "^9.0.3"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
