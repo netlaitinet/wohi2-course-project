@@ -1,0 +1,1 @@
+mariadb -u root -p -e "DROP DATABASE IF EXISTS cms; CREATE DATABASE cms;"

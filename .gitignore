@@ -7,3 +7,6 @@ node_modules
 eslint.config.mjs
 prisma.config.ts
 tsconfig.json
+
+prisma/migrations
+*.diff
