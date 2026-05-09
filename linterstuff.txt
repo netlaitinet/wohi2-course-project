@@ -1,6 +1,8 @@
 npm install --save-dev eslint
 npx eslint --init
 npx eslint .
+npm run lint
+npm run lint:fix
 
 npm run lint -- src/app.js
 npm run lint -- src/

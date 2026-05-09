@@ -4,7 +4,6 @@ node_modules
 
 /src/generated/prisma
 
-eslint.config.mjs
 prisma.config.ts
 tsconfig.json
 
