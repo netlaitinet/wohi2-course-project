@@ -1,0 +1,13 @@
+npm install --save-dev eslint
+npx eslint --init
+npx eslint .
+
+npm run lint -- src/app.js
+npm run lint -- src/
+npm run lint -- --fix src/app.js
+npm run
+npm run lint
+npm run lint -- --fix
+npm run lint -- --debug
+
+git worktree add ../my-branch-dir my-existing-branch
