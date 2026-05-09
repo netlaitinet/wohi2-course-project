@@ -12,6 +12,7 @@ function formatPost(post) {
     };
 }
 
+router.use(authenticate);
 
 // GET /posts
 // List all posts
@@ -80,8 +81,6 @@ router.post("/", async (req, res) => {
     res.status(201).json(formatPost(newPost));
 
 });
-
-router.use(authenticate);
 
 // PUT /posts/:postld
 router.put("/:postId", isOwner, async (req, res) => {
